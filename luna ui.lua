@@ -2271,7 +2271,7 @@ function Luna:CreateWindow(WindowSettings)
 
 	-- En lugar de destruir la sombra (lo cual crashea el script), la hacemos invisible:
 	if Main.Parent:FindFirstChild("ShadowHolder") then
-		Main.Parent.ShadowHolder.ImageTransparency = 1
+		Main.Parent.ShadowHolder.BackgroundTransparency = 1
 		Main.Parent.ShadowHolder.Visible = false
 	end
 
