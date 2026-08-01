@@ -2039,7 +2039,8 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 
 				-- Sincronizar la barra de arrastre si estamos moviendo el menú principal
 				if dragBar and Window == Main then
-					dragBar.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY + (Window.AbsoluteSize.Y / 2))
+                    -- ¡CAMBIADO A NEGATIVO (-) PARA QUE LA BARRA ESTÉ ARRIBA!
+					dragBar.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY - (Window.AbsoluteSize.Y / 2))
 				end
 			end
 		end)
@@ -2276,13 +2277,16 @@ function Luna:CreateWindow(WindowSettings)
 	end
 	Main.Size = MainSize
 
-    -- FORZAR CENTRADO PERFECTO DESDE EL INICIO
+    -- FORZAR CENTRADO PERFECTO DESDE EL INICIO Y DESVINCULAR DEL BOTÓN FLOTANTE
+	Main.Parent = LunaUI -- Esto lo saca de cualquier frame y lo hace independiente
 	Main.AnchorPoint = Vector2.new(0.5, 0.5)
 	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 
     if dragBar then
+		dragBar.Parent = LunaUI -- Lo independizamos también
 		dragBar.AnchorPoint = Vector2.new(0.5, 0.5)
-		dragBar.Position = UDim2.new(0.5, 0, 0.5, MainSize.Y.Offset / 2)
+        -- Usar resta (-) para que se posicione en el borde superior, no en el inferior
+		dragBar.Position = UDim2.new(0.5, 0, 0.5, -(MainSize.Y.Offset / 2))
 	end
 
 	-- 2. ARREGLO DEL CUADRO GRIS (Evitar que la pantalla de carga tape el Key System)
@@ -6734,13 +6738,15 @@ function Luna:CreateWindow(WindowSettings)
 
 
 	LunaUI.MobileSupport.Interact.MouseButton1Click:Connect(function()
-		-- FORZAR SIEMPRE AL CENTRO AL REABRIR (Menú y barra de arrastre)
+		-- FORZAR SIEMPRE AL CENTRO Y ASEGURAR QUE ES INDEPENDIENTE
+		Main.Parent = LunaUI
 		Main.AnchorPoint = Vector2.new(0.5, 0.5)
 		Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 		
 		if dragBar then
+			dragBar.Parent = LunaUI
 			dragBar.AnchorPoint = Vector2.new(0.5, 0.5)
-			dragBar.Position = UDim2.new(0.5, 0, 0.5, MainSize.Y.Offset / 2)
+			dragBar.Position = UDim2.new(0.5, 0, 0.5, -(MainSize.Y.Offset / 2))
 		end
 		
 		Unhide(Main, Window.CurrentTab)
