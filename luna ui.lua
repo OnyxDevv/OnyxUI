@@ -1976,8 +1976,8 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 	pcall(function()
 		local Dragging = false
 		local DragInput = nil
-		local guiStartPos = nil
-		local inputStartPos = nil
+		local dragStart = nil
+		local startPos = nil
 
 		local function connectFunctions()
 			if dragBar and enableTaptic then
@@ -2000,10 +2000,8 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 		Bar.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = true
-				
-				-- Capturamos la posición real exacta del UI al tocar
-				guiStartPos = Window.AbsolutePosition
-				inputStartPos = Input.Position
+				dragStart = Input.Position
+				startPos = Window.Position
 
 				if enableTaptic then
 					TweenService:Create(dragBarCosmetic, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 110, 0, 4), BackgroundTransparency = 0}):Play()
@@ -2030,29 +2028,18 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 
 		UserInputService.InputChanged:Connect(function(Input)
 			if Input == DragInput and Dragging then
-				-- Calculamos la diferencia exacta desde donde el dedo tocó
-				local Delta = Input.Position - inputStartPos
-
-				-- Nueva posición en píxeles absolutos
-				local absX = guiStartPos.X + Delta.X
-				local absY = guiStartPos.Y + Delta.Y
+				-- Arrastre delta: Suave, preciso y sin brincos raros.
+				local Delta = Input.Position - dragStart
 				
-				-- Límites estrictos para que NO salga de la pantalla
-				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
-				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
-				
-				absX = math.clamp(absX, 0, maxX)
-				absY = math.clamp(absY, 0, maxY)
+				local newX = startPos.X.Offset + Delta.X
+				local newY = startPos.Y.Offset + Delta.Y
 
-				-- Convertimos la posición a AnchorPoint para que el Hub no de saltos
-				local finalX = absX + (Window.AbsoluteSize.X * Window.AnchorPoint.X)
-				local finalY = absY + (Window.AbsoluteSize.Y * Window.AnchorPoint.Y)
+				-- Movimiento ultra fluido respetando anclajes
+				Window.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY)
 
-				-- Aplicamos el movimiento hiper fluido
-				Window.Position = UDim2.new(0, finalX, 0, finalY)
-
+				-- Sincronizar la barra de arrastre si estamos moviendo el menú principal
 				if dragBar and Window == Main then
-					dragBar.Position = UDim2.new(0, finalX, 0, finalY + Window.AbsoluteSize.Y)
+					dragBar.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY + (Window.AbsoluteSize.Y / 2))
 				end
 			end
 		end)
@@ -2292,6 +2279,11 @@ function Luna:CreateWindow(WindowSettings)
     -- FORZAR CENTRADO PERFECTO DESDE EL INICIO
 	Main.AnchorPoint = Vector2.new(0.5, 0.5)
 	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+    if dragBar then
+		dragBar.AnchorPoint = Vector2.new(0.5, 0.5)
+		dragBar.Position = UDim2.new(0.5, 0, 0.5, MainSize.Y.Offset / 2)
+	end
 
 	-- 2. ARREGLO DEL CUADRO GRIS (Evitar que la pantalla de carga tape el Key System)
 	if WindowSettings.KeySystem then
@@ -6742,9 +6734,14 @@ function Luna:CreateWindow(WindowSettings)
 
 
 	LunaUI.MobileSupport.Interact.MouseButton1Click:Connect(function()
-		-- FORZAR SIEMPRE AL CENTRO AL REABRIR
+		-- FORZAR SIEMPRE AL CENTRO AL REABRIR (Menú y barra de arrastre)
 		Main.AnchorPoint = Vector2.new(0.5, 0.5)
 		Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+		
+		if dragBar then
+			dragBar.AnchorPoint = Vector2.new(0.5, 0.5)
+			dragBar.Position = UDim2.new(0.5, 0, 0.5, MainSize.Y.Offset / 2)
+		end
 		
 		Unhide(Main, Window.CurrentTab)
 		if dragBar then dragBar.Visible = true end
