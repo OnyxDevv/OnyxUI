@@ -1843,42 +1843,10 @@ local SizeBleh = nil
 
 local function Hide(Window, bind, notif)
 	SizeBleh = Window.Size
-	bind = string.split(tostring(bind), "Enum.KeyCode.")
-	bind = bind[2]
-	if notif then
-		Luna:Notification({Title = "Interface Hidden", Content = "The interface has been hidden, you may reopen the interface by Pressing the UI Bind In Settings ("..tostring(bind)..")", Icon = "visibility_off"})
+	Window.Visible = false -- Puf, desaparece al instante
+	if Window.Parent:FindFirstChild("ShadowHolder") then
+		Window.Parent.ShadowHolder.Visible = false
 	end
-	tween(Window, {BackgroundTransparency = 1})
-	tween(Window.Elements, {BackgroundTransparency = 1})
-	tween(Window.Line, {BackgroundTransparency = 1})
-	tween(Window.Title.Title, {TextTransparency = 1})
-	tween(Window.Title.subtitle, {TextTransparency = 1})
-	tween(Window.Logo, {ImageTransparency = 1})
-	tween(Window.Navigation.Line, {BackgroundTransparency = 1})
-
-	for _, TopbarButton in ipairs(Window.Controls:GetChildren()) do
-		if TopbarButton.ClassName == "Frame" then
-			tween(TopbarButton, {BackgroundTransparency = 1})
-			tween(TopbarButton.UIStroke, {Transparency = 1})
-			tween(TopbarButton.ImageLabel, {ImageTransparency = 1})
-			TopbarButton.Visible = false
-		end
-	end
-	for _, tabbtn in ipairs(Window.Navigation.Tabs:GetChildren()) do
-		if tabbtn.ClassName == "Frame" and tabbtn.Name ~= "InActive Template" then
-			TweenService:Create(tabbtn, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-			TweenService:Create(tabbtn.ImageLabel, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
-			TweenService:Create(tabbtn.DropShadowHolder.DropShadow, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
-			TweenService:Create(tabbtn.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
-		end
-	end
-
-	task.wait(0.28)
-	Window.Size = UDim2.new(0,0,0,0)
-	Window.Parent.ShadowHolder.Visible = false
-	task.wait()
-	Window.Elements.Parent.Visible = false
-	Window.Visible = false
 end
 
 
@@ -2067,8 +2035,23 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 			if Input == DragInput and Dragging then
 				local Delta = Input.Position - MousePos
 
-				local newMainPosition = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
-				TweenService:Create(Window, TweenInfo.new(0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = newMainPosition}):Play()
+				local newX = FramePos.X.Offset + Delta.X
+				local newY = FramePos.Y.Offset + Delta.Y
+				
+				-- Limitar para que no se salga de la pantalla nunca más
+				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
+				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
+				newX = math.clamp(newX, 0, maxX)
+				newY = math.clamp(newY, 0, maxY)
+
+				-- Movimiento instantáneo sin lag de Tween
+				Window.Position = UDim2.new(0, newX, 0, newY)
+
+				if dragBar then
+					dragBar.Position = UDim2.new(0, newX, 0, newY + Window.AbsoluteSize.Y)
+				end
+			end
+		end)
 
 				if dragBar then
 					local newDragBarPosition = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y + 240)
@@ -2164,50 +2147,18 @@ end
 local function Unhide(Window, currentTab)
 	Window.Size = SizeBleh
 	Window.Elements.Visible = true
-	Window.Visible = true
-	task.wait()
-	tween(Window, {BackgroundTransparency = 0.2})
-	tween(Window.Elements, {BackgroundTransparency = 0.08})
-	tween(Window.Line, {BackgroundTransparency = 0})
-	tween(Window.Title.Title, {TextTransparency = 0})
-	tween(Window.Title.subtitle, {TextTransparency = 0})
-	tween(Window.Logo, {ImageTransparency = 0})
-	tween(Window.Navigation.Line, {BackgroundTransparency = 0})
-
-	for _, TopbarButton in ipairs(Window.Controls:GetChildren()) do
-		if TopbarButton.ClassName == "Frame" and TopbarButton.Name ~= "Theme" then
-			TopbarButton.Visible = true
-			tween(TopbarButton, {BackgroundTransparency = 0.25})
-			tween(TopbarButton.UIStroke, {Transparency = 0.5})
-			tween(TopbarButton.ImageLabel, {ImageTransparency = 0.25})
-		end
+	Window.Visible = true -- Puf, aparece al instante
+	if Window.Parent:FindFirstChild("ShadowHolder") then
+		Window.Parent.ShadowHolder.Visible = false -- Mantener sombra muerta
 	end
-	for _, tabbtn in ipairs(Window.Navigation.Tabs:GetChildren()) do
-		if tabbtn.ClassName == "Frame" and tabbtn.Name ~= "InActive Template" then
-			if tabbtn.Name == currentTab then
-				TweenService:Create(tabbtn, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
-				TweenService:Create(tabbtn.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {Transparency = 0.41}):Play()
-			end
-			TweenService:Create(tabbtn.ImageLabel, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 0}):Play()
-			TweenService:Create(tabbtn.DropShadowHolder.DropShadow, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
-		end
-	end
-
 end
 
-local MainSize
-local MinSize 
-if Camera.ViewportSize.X > 774 and Camera.ViewportSize.Y > 503 then
-	MainSize = UDim2.fromOffset(550, 500) -- Cuadrado limpio para PC
-	MinSize = UDim2.fromOffset(320, 42) -- <--- PASTILLA PARA PC
-else
-	MainSize = UDim2.fromOffset(Camera.ViewportSize.X - 100, Camera.ViewportSize.Y - 80) -- Cuadrado adaptado a tu POCO F7
-	MinSize = UDim2.fromOffset(310, 42) -- <--- PASTILLA EXACTA PARA CELULAR
-end
+local MainSize = UDim2.fromOffset(400, 400) -- Tu HUB cuadrado y más chico (perfecto para celular)
+local MinSize = UDim2.fromOffset(310, 42) -- La pastilla que ya habíamos hecho
 
 local function Maximise(Window)
 	Window.Controls.ToggleSize.ImageLabel.Image = "rbxassetid://10137941941"
-	tween(Window, {Size = MainSize})
+	Window.Size = MainSize -- Asignación directa, cero animaciones de expansión
 	Window.Elements.Visible = true
 	Window.Navigation.Visible = true
 end
@@ -2216,7 +2167,7 @@ local function Minimize(Window)
 	Window.Controls.ToggleSize.ImageLabel.Image = "rbxassetid://11036884234"
 	Window.Elements.Visible = false
 	Window.Navigation.Visible = false
-	tween(Window, {Size = MinSize})
+	Window.Size = MinSize -- Asignación directa, se encoge al instante
 end
 
 
@@ -2291,7 +2242,7 @@ function Luna:CreateWindow(WindowSettings)
 	ShadowCorner.Parent = Main.Parent.ShadowHolder
 	-- [FIN] Esquinas redondas
 	Main.Size = UDim2.fromOffset(Main.Size.X.Offset - 70, Main.Size.Y.Offset - 55)
-	Main.Parent.ShadowHolder.Size = Main.Size
+	Main.Parent.ShadowHolder:Destroy() -- Elimina la sombra para siempre
 	LoadingFrame.Frame.Frame.Title.TextTransparency = 1
 	LoadingFrame.Frame.Frame.Subtitle.TextTransparency = 1
 	LoadingFrame.Version.TextTransparency = 1
@@ -2316,7 +2267,7 @@ function Luna:CreateWindow(WindowSettings)
 		Main.Parent.ShadowHolder.Position = Main.Position
 	end)
 	Main:GetPropertyChangedSignal("Size"):Connect(function()
-		Main.Parent.ShadowHolder.Size = Main.Size
+		Main.Parent.ShadowHolder:Destroy() -- Elimina la sombra para siempre
 	end)
 
 	LoadingFrame.Visible = true
@@ -2343,7 +2294,7 @@ function Luna:CreateWindow(WindowSettings)
 
 	LunaUI.Enabled = true
 
-	BlurModule(Main)
+	
 
 	if WindowSettings.KeySystem then
 		local KeySettings = WindowSettings.KeySettings
