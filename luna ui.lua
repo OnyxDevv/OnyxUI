@@ -2244,14 +2244,10 @@ function Luna:CreateWindow(WindowSettings)
 
 	Main.Title.Title.Text = WindowSettings.Name
 	Main.Title.subtitle.Text = WindowSettings.Subtitle
-	local Window = { Bind = Enum.KeyCode.K, CurrentTab = nil, State = true, Size = false, Settings = nil }
-
-	Main.Title.Title.Text = WindowSettings.Name
-	Main.Title.subtitle.Text = WindowSettings.Subtitle
 	Main.Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
     
 	-------------------------------------------------------------------------
-	-- [AQUÍ EMPIEZA LO QUE DEBES PEGAR]
+	-- [AQUÍ EMPIEZA LA SOLUCIÓN DEFINITIVA]
 	-------------------------------------------------------------------------
 	Main.Visible = true
 	Main.BackgroundTransparency = 0.03 -- Casi sólido para el toque WindUI
@@ -2265,26 +2261,32 @@ function Luna:CreateWindow(WindowSettings)
 	-- Hacer las esquinas redondas estilo WindUI SIN romper la UI
 	local MainCorner = Main:FindFirstChild("UICorner") or Instance.new("UICorner", Main)
 	MainCorner.CornerRadius = UDim.new(0, 14)
-	
-	-- IMPORTANTE: No usar ClipsDescendants aquí porque corta la barra superior
 	Main.ClipsDescendants = false 
 
-	-- En lugar de destruir la sombra (lo cual crashea el script), la hacemos invisible:
+	-- Desactivar la sombra original para evitar el crasheo
 	if Main.Parent:FindFirstChild("ShadowHolder") then
 		Main.Parent.ShadowHolder.BackgroundTransparency = 1
 		Main.Parent.ShadowHolder.Visible = false
 	end
 
-	-- Ajustar tamaño para móviles y PC (Responsive)
+	-- 1. ARREGLO DE TAMAÑO (Actualizamos MainSize para que las animaciones lo respeten)
 	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
-		-- Si es celular (como en tu foto), hacerla un poco más pequeña
-		Main.Size = UDim2.fromOffset(400, 320)
+		MainSize = UDim2.fromOffset(400, 320)
 	else
-		-- Tamaño original para PC
-		Main.Size = UDim2.fromOffset(450, 350)
+		MainSize = UDim2.fromOffset(450, 350)
+	end
+	Main.Size = MainSize
+
+	-- 2. ARREGLO DEL CUADRO GRIS (Evitar que la pantalla de carga tape el Key System)
+	if WindowSettings.KeySystem then
+		LoadingFrame.BackgroundTransparency = 1
+		LoadingFrame.Active = false
+		if Main:FindFirstChild("KeySystem") then
+			Main.KeySystem.ZIndex = 99999 -- Forzamos el KeySystem encima de todo
+		end
 	end
 	-------------------------------------------------------------------------
-	-- [AQUÍ TERMINA LO QUE DEBES PEGAR]
+	-- [AQUÍ TERMINA LA SOLUCIÓN DEFINITIVA]
 	-------------------------------------------------------------------------
 
 	LoadingFrame.Frame.Frame.Title.TextTransparency = 1
