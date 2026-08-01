@@ -1974,7 +1974,10 @@ local KeySystem : Frame = Main.KeySystem
 
 local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 	pcall(function()
-		local Dragging, DragInput, MousePos, FramePos
+		local Dragging = false
+		local DragInput = nil
+		local guiStartPos = nil
+		local inputStartPos = nil
 
 		local function connectFunctions()
 			if dragBar and enableTaptic then
@@ -1997,12 +2000,10 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 		Bar.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = true
-				MousePos = Input.Position
-				-- [ARREGLO]: En lugar de leer el offset, leemos la posición real en pantalla
-				FramePos = Vector2.new(
-					Window.AbsolutePosition.X + (Window.AbsoluteSize.X * Window.AnchorPoint.X),
-					Window.AbsolutePosition.Y + (Window.AbsoluteSize.Y * Window.AnchorPoint.Y)
-				)
+				
+				-- Capturamos la posición real exacta del UI al tocar
+				guiStartPos = Window.AbsolutePosition
+				inputStartPos = Input.Position
 
 				if enableTaptic then
 					TweenService:Create(dragBarCosmetic, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 110, 0, 4), BackgroundTransparency = 0}):Play()
@@ -2029,56 +2030,29 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 
 		UserInputService.InputChanged:Connect(function(Input)
 			if Input == DragInput and Dragging then
-				local Delta = Input.Position - MousePos
+				-- Calculamos la diferencia exacta desde donde el dedo tocó
+				local Delta = Input.Position - inputStartPos
 
-				-- [ARREGLO]: Ahora suma sobre los píxeles reales, no el offset nulo
-				local newX = FramePos.X + Delta.X
-				local newY = FramePos.Y + Delta.Y
+				-- Nueva posición en píxeles absolutos
+				local absX = guiStartPos.X + Delta.X
+				local absY = guiStartPos.Y + Delta.Y
 				
-				-- TOPE DE PANTALLA
-				local minX = Window.AbsoluteSize.X * Window.AnchorPoint.X
-				local minY = Window.AbsoluteSize.Y * Window.AnchorPoint.Y
-				local maxX = Camera.ViewportSize.X - (Window.AbsoluteSize.X * (1 - Window.AnchorPoint.X))
-				local maxY = Camera.ViewportSize.Y - (Window.AbsoluteSize.Y * (1 - Window.AnchorPoint.Y))
+				-- Límites estrictos para que NO salga de la pantalla
+				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
+				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
 				
-				newX = math.clamp(newX, minX, maxX)
-				newY = math.clamp(newY, minY, maxY)
+				absX = math.clamp(absX, 0, maxX)
+				absY = math.clamp(absY, 0, maxY)
 
-				-- Movimiento instantáneo sin bug
-				Window.Position = UDim2.new(0, newX, 0, newY)
+				-- Convertimos la posición a AnchorPoint para que el Hub no de saltos
+				local finalX = absX + (Window.AbsoluteSize.X * Window.AnchorPoint.X)
+				local finalY = absY + (Window.AbsoluteSize.Y * Window.AnchorPoint.Y)
 
-				if dragBar then
-					dragBar.Position = UDim2.new(0, newX, 0, newY + Window.AbsoluteSize.Y)
-				end
-			end
-		end)
+				-- Aplicamos el movimiento hiper fluido
+				Window.Position = UDim2.new(0, finalX, 0, finalY)
 
-		Bar.InputChanged:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-				DragInput = Input
-			end
-		end)
-
-		UserInputService.InputChanged:Connect(function(Input)
-			if Input == DragInput and Dragging then
-				local Delta = Input.Position - MousePos
-
-				local newX = FramePos.X.Offset + Delta.X
-				local newY = FramePos.Y.Offset + Delta.Y
-				
-				local minX = Window.AbsoluteSize.X * Window.AnchorPoint.X
-				local minY = Window.AbsoluteSize.Y * Window.AnchorPoint.Y
-				local maxX = Camera.ViewportSize.X - (Window.AbsoluteSize.X * (1 - Window.AnchorPoint.X))
-				local maxY = Camera.ViewportSize.Y - (Window.AbsoluteSize.Y * (1 - Window.AnchorPoint.Y))
-				
-				newX = math.clamp(newX, minX, maxX)
-				newY = math.clamp(newY, minY, maxY)
-
-				-- Movimiento instantáneo sin animaciones laggeadas
-				Window.Position = UDim2.new(0, newX, 0, newY)
-
-				if dragBar then
-					dragBar.Position = UDim2.new(0, newX, 0, newY + Window.AbsoluteSize.Y)
+				if dragBar and Window == Main then
+					dragBar.Position = UDim2.new(0, finalX, 0, finalY + Window.AbsoluteSize.Y)
 				end
 			end
 		end)
@@ -2314,6 +2288,10 @@ function Luna:CreateWindow(WindowSettings)
 		MainSize = UDim2.fromOffset(450, 350)
 	end
 	Main.Size = MainSize
+
+    -- FORZAR CENTRADO PERFECTO DESDE EL INICIO
+	Main.AnchorPoint = Vector2.new(0.5, 0.5)
+	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 
 	-- 2. ARREGLO DEL CUADRO GRIS (Evitar que la pantalla de carga tape el Key System)
 	if WindowSettings.KeySystem then
