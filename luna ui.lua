@@ -2198,11 +2198,11 @@ end
 local MainSize
 local MinSize 
 if Camera.ViewportSize.X > 774 and Camera.ViewportSize.Y > 503 then
-	MainSize = UDim2.fromOffset(550, 550) -- <--- AQUÍ LO HACES CUADRADO (Antes era 675, 424)
-	MinSize = UDim2.fromOffset(500, 42)
+	MainSize = UDim2.fromOffset(550, 500) -- Cuadrado limpio para PC
+	MinSize = UDim2.fromOffset(320, 42) -- <--- PASTILLA PARA PC
 else
-	MainSize = UDim2.fromOffset(Camera.ViewportSize.X - 100, Camera.ViewportSize.Y - 100)
-	MinSize = UDim2.fromOffset(Camera.ViewportSize.X - 275, 42)
+	MainSize = UDim2.fromOffset(Camera.ViewportSize.X - 100, Camera.ViewportSize.Y - 80) -- Cuadrado adaptado a tu POCO F7
+	MinSize = UDim2.fromOffset(310, 42) -- <--- PASTILLA EXACTA PARA CELULAR
 end
 
 local function Maximise(Window)
@@ -2265,14 +2265,24 @@ function Luna:CreateWindow(WindowSettings)
 	Main.Title.subtitle.Text = WindowSettings.Subtitle
 	Main.Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
 	Main.Visible = true
-	Main.BackgroundTransparency = 1
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Main.UIStroke.Transparency = 0.9
-    Main.UIStroke.Color = Color3.fromRGB(255, 255, 255)
+	Main.BackgroundTransparency = 0.03 -- Casi sólido para el toque WindUI
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18) -- Gris oscuro súper premium
+    
+    -- Le metemos el stroke (borde) si la UI base no se lo bloquea
+    local stroke = Main:FindFirstChild("UIStroke") or Instance.new("UIStroke", Main)
+    stroke.Transparency = 0.85
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+
 	Main.Size = MainSize
     -- [INICIO] Hacer las esquinas redondas estilo WindUI
 	local MainCorner = Instance.new("UICorner")
-	MainCorner.CornerRadius = UDim.new(0, 12) -- 12 es qué tan redonda quieres la esquina. Súbele a 15 si la quieres más circular.
+	MainCorner.CornerRadius = UDim.new(0, 14) -- 14px es la curvatura perfecta de WindUI
+	MainCorner.Parent = Main
+	Main.ClipsDescendants = true -- Corta lo que sobresalga para que no rompa la curva
+
+	local ShadowCorner = Instance.new("UICorner")
+	ShadowCorner.CornerRadius = UDim.new(0, 14)
+	ShadowCorner.Parent = Main.Parent.ShadowHolder -- 12 es qué tan redonda quieres la esquina. Súbele a 15 si la quieres más circular.
 	MainCorner.Parent = Main
 	Main.ClipsDescendants = true -- Esto fuerza a que nada (textos, líneas) se salga de las esquinas redondas
 
@@ -6667,42 +6677,7 @@ function Luna:CreateWindow(WindowSettings)
 		tween(Main.Controls.Close.ImageLabel, {ImageColor3 = Color3.fromRGB(195,195,195)})
 	end)
 
-	local OpenButtonUI = Instance.new("ScreenGui")
-	OpenButtonUI.Name = "LunaOpenHub"
-	OpenButtonUI.Parent = CoreGui
-	OpenButtonUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-	local PillButton = Instance.new("TextButton")
-	PillButton.Name = "PillButton"
-	PillButton.Parent = OpenButtonUI
-	PillButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-	PillButton.Position = UDim2.new(0.5, -50, 0, 20)
-	PillButton.Size = UDim2.new(0, 100, 0, 35)
-	PillButton.Font = Enum.Font.GothamBold
-	PillButton.Text = "RaikaHub"
-	PillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	PillButton.TextSize = 14.000
-	PillButton.AutoButtonColor = false
-
-	local PillCorner = Instance.new("UICorner")
-	PillCorner.CornerRadius = UDim.new(1, 0)
-	PillCorner.Parent = PillButton
-
-	local PillStroke = Instance.new("UIStroke")
-	PillStroke.Color = Color3.fromRGB(255, 255, 255)
-	PillStroke.Transparency = 0.8
-	PillStroke.Parent = PillButton
-
-	PillButton.MouseButton1Click:Connect(function()
-		Window.State = not Window.State
-		if Window.State then
-			Unhide(Main, Window.CurrentTab)
-			dragBar.Visible = true
-		else
-			Hide(Main, Window.Bind, false)
-			dragBar.Visible = false
-		end
-	end)
+	
 
 	Main.Logo.MouseButton1Click:Connect(function()
 		if Navigation.Size.X.Offset == 205 then
