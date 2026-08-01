@@ -2062,7 +2062,7 @@ function Luna:Notification(data) -- action e.g open messages
 		newNotification.Parent = Notifications
 		newNotification.LayoutOrder = #Notifications:GetChildren()
 		newNotification.Visible = false
-		BlurModule(newNotification)
+		-- BlurModule(newNotification)
 
 		-- Set Data
 		newNotification.Title.Text = data.Title
@@ -2244,35 +2244,49 @@ function Luna:CreateWindow(WindowSettings)
 
 	Main.Title.Title.Text = WindowSettings.Name
 	Main.Title.subtitle.Text = WindowSettings.Subtitle
+	local Window = { Bind = Enum.KeyCode.K, CurrentTab = nil, State = true, Size = false, Settings = nil }
+
+	Main.Title.Title.Text = WindowSettings.Name
+	Main.Title.subtitle.Text = WindowSettings.Subtitle
 	Main.Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
+    
+	-------------------------------------------------------------------------
+	-- [AQUÍ EMPIEZA LO QUE DEBES PEGAR]
+	-------------------------------------------------------------------------
 	Main.Visible = true
 	Main.BackgroundTransparency = 0.03 -- Casi sólido para el toque WindUI
-    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18) -- Gris oscuro súper premium
+	Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18) -- Gris oscuro súper premium
     
-    -- Le metemos el stroke (borde) si la UI base no se lo bloquea
-    local stroke = Main:FindFirstChild("UIStroke") or Instance.new("UIStroke", Main)
-    stroke.Transparency = 0.85
-    stroke.Color = Color3.fromRGB(255, 255, 255)
+	-- Le metemos el stroke (borde)
+	local stroke = Main:FindFirstChild("UIStroke") or Instance.new("UIStroke", Main)
+	stroke.Transparency = 0.85
+	stroke.Color = Color3.fromRGB(255, 255, 255)
 
-	Main.Size = MainSize
-    -- [INICIO] Hacer las esquinas redondas estilo WindUI
-	local MainCorner = Instance.new("UICorner")
-	MainCorner.CornerRadius = UDim.new(0, 14) -- 14px es la curvatura perfecta de WindUI
-	MainCorner.Parent = Main
-	Main.ClipsDescendants = true -- Corta lo que sobresalga para que no rompa la curva
+	-- Hacer las esquinas redondas estilo WindUI SIN romper la UI
+	local MainCorner = Main:FindFirstChild("UICorner") or Instance.new("UICorner", Main)
+	MainCorner.CornerRadius = UDim.new(0, 14)
+	
+	-- IMPORTANTE: No usar ClipsDescendants aquí porque corta la barra superior
+	Main.ClipsDescendants = false 
 
-	local ShadowCorner = Instance.new("UICorner")
-	ShadowCorner.CornerRadius = UDim.new(0, 14)
-	ShadowCorner.Parent = Main.Parent.ShadowHolder -- 12 es qué tan redonda quieres la esquina. Súbele a 15 si la quieres más circular.
-	MainCorner.Parent = Main
-	Main.ClipsDescendants = true -- Esto fuerza a que nada (textos, líneas) se salga de las esquinas redondas
+	-- En lugar de destruir la sombra (lo cual crashea el script), la hacemos invisible:
+	if Main.Parent:FindFirstChild("ShadowHolder") then
+		Main.Parent.ShadowHolder.ImageTransparency = 1
+		Main.Parent.ShadowHolder.Visible = false
+	end
 
-	local ShadowCorner = Instance.new("UICorner")
-	ShadowCorner.CornerRadius = UDim.new(0, 12) -- Le redondeamos la sombra también para que cuadre
-	ShadowCorner.Parent = Main.Parent.ShadowHolder
-	-- [FIN] Esquinas redondas
-	Main.Size = UDim2.fromOffset(Main.Size.X.Offset - 70, Main.Size.Y.Offset - 55)
-	Main.Parent.ShadowHolder:Destroy() -- Elimina la sombra para siempre
+	-- Ajustar tamaño para móviles y PC (Responsive)
+	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+		-- Si es celular (como en tu foto), hacerla un poco más pequeña
+		Main.Size = UDim2.fromOffset(400, 320)
+	else
+		-- Tamaño original para PC
+		Main.Size = UDim2.fromOffset(450, 350)
+	end
+	-------------------------------------------------------------------------
+	-- [AQUÍ TERMINA LO QUE DEBES PEGAR]
+	-------------------------------------------------------------------------
+
 	LoadingFrame.Frame.Frame.Title.TextTransparency = 1
 	LoadingFrame.Frame.Frame.Subtitle.TextTransparency = 1
 	LoadingFrame.Version.TextTransparency = 1
