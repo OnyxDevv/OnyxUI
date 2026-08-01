@@ -2030,11 +2030,13 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 				local newX = FramePos.X.Offset + Delta.X
 				local newY = FramePos.Y.Offset + Delta.Y
 				
-				-- TOPE DE PANTALLA: Esto evita que se te pierda la UI
-				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
-				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
-				newX = math.clamp(newX, 0, maxX)
-				newY = math.clamp(newY, 0, maxY)
+				local minX = Window.AbsoluteSize.X * Window.AnchorPoint.X
+				local minY = Window.AbsoluteSize.Y * Window.AnchorPoint.Y
+				local maxX = Camera.ViewportSize.X - (Window.AbsoluteSize.X * (1 - Window.AnchorPoint.X))
+				local maxY = Camera.ViewportSize.Y - (Window.AbsoluteSize.Y * (1 - Window.AnchorPoint.Y))
+				
+				newX = math.clamp(newX, minX, maxX)
+				newY = math.clamp(newY, minY, maxY)
 
 				-- Movimiento instantáneo sin animaciones laggeadas
 				Window.Position = UDim2.new(0, newX, 0, newY)
@@ -2271,7 +2273,7 @@ function Luna:CreateWindow(WindowSettings)
 
 	-- 1. ARREGLO DE TAMAÑO (Actualizamos MainSize para que las animaciones lo respeten)
 	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
-		MainSize = UDim2.fromOffset(400, 320)
+		MainSize = UDim2.fromOffset(480, 340)
 	else
 		MainSize = UDim2.fromOffset(450, 350)
 	end
@@ -2296,6 +2298,10 @@ function Luna:CreateWindow(WindowSettings)
 
 	tween(Elements.Parent, {BackgroundTransparency = 1})
 	Elements.Parent.Visible = false
+
+    if Elements:FindFirstChild("UIPageLayout") then
+		Elements.UIPageLayout.TweenTime = 0 -- Quita el deslizamiento al cambiar de Tab
+	end
 
 	LoadingFrame.Frame.Frame.Title.Text = WindowSettings.LoadingTitle
 	LoadingFrame.Frame.Frame.Subtitle.Text = WindowSettings.LoadingSubtitle
@@ -4654,12 +4660,16 @@ function Luna:CreateWindow(WindowSettings)
 			Slider.Interact.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then 
 					SLDragging = true 
+					local scroll = Slider:FindFirstAncestorOfClass("ScrollingFrame")
+					if scroll then scroll.ScrollingEnabled = false end
 				end 
 			end)
 
 			Slider.Interact.InputEnded:Connect(function(Input) 
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then 
 					SLDragging = false 
+					local scroll = Slider:FindFirstAncestorOfClass("ScrollingFrame")
+					if scroll then scroll.ScrollingEnabled = true end
 				end 
 			end)
 
