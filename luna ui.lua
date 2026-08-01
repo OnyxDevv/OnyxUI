@@ -1998,7 +1998,11 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = true
 				MousePos = Input.Position
-				FramePos = Window.Position
+				-- [ARREGLO]: En lugar de leer el offset, leemos la posición real en pantalla
+				FramePos = Vector2.new(
+					Window.AbsolutePosition.X + (Window.AbsoluteSize.X * Window.AnchorPoint.X),
+					Window.AbsolutePosition.Y + (Window.AbsoluteSize.Y * Window.AnchorPoint.Y)
+				)
 
 				if enableTaptic then
 					TweenService:Create(dragBarCosmetic, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 110, 0, 4), BackgroundTransparency = 0}):Play()
@@ -2014,6 +2018,38 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 						end
 					end
 				end)
+			end
+		end)
+
+		Bar.InputChanged:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+				DragInput = Input
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(Input)
+			if Input == DragInput and Dragging then
+				local Delta = Input.Position - MousePos
+
+				-- [ARREGLO]: Ahora suma sobre los píxeles reales, no el offset nulo
+				local newX = FramePos.X + Delta.X
+				local newY = FramePos.Y + Delta.Y
+				
+				-- TOPE DE PANTALLA
+				local minX = Window.AbsoluteSize.X * Window.AnchorPoint.X
+				local minY = Window.AbsoluteSize.Y * Window.AnchorPoint.Y
+				local maxX = Camera.ViewportSize.X - (Window.AbsoluteSize.X * (1 - Window.AnchorPoint.X))
+				local maxY = Camera.ViewportSize.Y - (Window.AbsoluteSize.Y * (1 - Window.AnchorPoint.Y))
+				
+				newX = math.clamp(newX, minX, maxX)
+				newY = math.clamp(newY, minY, maxY)
+
+				-- Movimiento instantáneo sin bug
+				Window.Position = UDim2.new(0, newX, 0, newY)
+
+				if dragBar then
+					dragBar.Position = UDim2.new(0, newX, 0, newY + Window.AbsoluteSize.Y)
+				end
 			end
 		end)
 
@@ -6728,8 +6764,12 @@ function Luna:CreateWindow(WindowSettings)
 
 
 	LunaUI.MobileSupport.Interact.MouseButton1Click:Connect(function()
+		-- FORZAR SIEMPRE AL CENTRO AL REABRIR
+		Main.AnchorPoint = Vector2.new(0.5, 0.5)
+		Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+		
 		Unhide(Main, Window.CurrentTab)
-		dragBar.Visible = true
+		if dragBar then dragBar.Visible = true end
 		Window.State = true
 		LunaUI.MobileSupport.Visible = false
 	end)
