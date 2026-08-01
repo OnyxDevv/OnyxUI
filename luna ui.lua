@@ -2030,11 +2030,13 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 				local newX = FramePos.X.Offset + Delta.X
 				local newY = FramePos.Y.Offset + Delta.Y
 				
+				-- TOPE DE PANTALLA: Esto evita que se te pierda la UI
 				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
 				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
 				newX = math.clamp(newX, 0, maxX)
 				newY = math.clamp(newY, 0, maxY)
 
+				-- Movimiento instantáneo sin animaciones laggeadas
 				Window.Position = UDim2.new(0, newX, 0, newY)
 
 				if dragBar then
@@ -2142,19 +2144,51 @@ local function Unhide(Window, currentTab)
 	Window.Elements.Visible = true
 	Window.Visible = true -- Puf, aparece al instante
 	if Window.Parent:FindFirstChild("ShadowHolder") then
-		Window.Parent.ShadowHolder.Visible = false -- Mantener sombra muerta
+		Window.Parent.ShadowHolder.Visible = false
+	end
+
+	-- ESTO ES LO QUE FALTABA: Restaurar la visibilidad de los botones y textos al instante
+	Window.BackgroundTransparency = 0.03
+	Window.Elements.BackgroundTransparency = 0.08
+	if Window:FindFirstChild("Line") then Window.Line.BackgroundTransparency = 0 end
+	if Window:FindFirstChild("Title") then 
+		Window.Title.Title.TextTransparency = 0
+		Window.Title.subtitle.TextTransparency = 0
+	end
+	if Window:FindFirstChild("Logo") then Window.Logo.ImageTransparency = 0 end
+	if Window:FindFirstChild("Navigation") and Window.Navigation:FindFirstChild("Line") then 
+		Window.Navigation.Line.BackgroundTransparency = 0 
+	end
+
+	for _, TopbarButton in ipairs(Window.Controls:GetChildren()) do
+		if TopbarButton.ClassName == "Frame" and TopbarButton.Name ~= "Theme" then
+			TopbarButton.Visible = true
+			TopbarButton.BackgroundTransparency = 0.25
+			if TopbarButton:FindFirstChild("UIStroke") then TopbarButton.UIStroke.Transparency = 0.5 end
+			if TopbarButton:FindFirstChild("ImageLabel") then TopbarButton.ImageLabel.ImageTransparency = 0.25 end
+		end
+	end
+	for _, tabbtn in ipairs(Window.Navigation.Tabs:GetChildren()) do
+		if tabbtn.ClassName == "Frame" and tabbtn.Name ~= "InActive Template" then
+			if tabbtn.Name == currentTab then
+				tabbtn.BackgroundTransparency = 0
+				if tabbtn:FindFirstChild("UIStroke") then tabbtn.UIStroke.Transparency = 0.41 end
+			end
+			if tabbtn:FindFirstChild("ImageLabel") then tabbtn.ImageLabel.ImageTransparency = 0 end
+			if tabbtn:FindFirstChild("DropShadowHolder") and tabbtn.DropShadowHolder:FindFirstChild("DropShadow") then 
+				tabbtn.DropShadowHolder.DropShadow.ImageTransparency = 1 
+			end
+		end
 	end
 end
 
-local MainSize = UDim2.fromOffset(400, 400) -- Tu HUB cuadrado y más chico (perfecto para celular)
-local MinSize = UDim2.fromOffset(310, 42) -- La pastilla que ya habíamos hecho
-
-local MainSize = UDim2.fromOffset(400, 400) -- Tu HUB cuadrado y más chico (perfecto para celular)
-local MinSize = UDim2.fromOffset(310, 42) -- La pastilla que ya habíamos hecho
+-- MEDIDAS EXACTAS: CUADRADO PARA EL HUB, PASTILLA PARA MINIMIZAR
+local MainSize = UDim2.fromOffset(400, 400) 
+local MinSize = UDim2.fromOffset(310, 42)
 
 local function Maximise(Window)
 	Window.Controls.ToggleSize.ImageLabel.Image = "rbxassetid://10137941941"
-	Window.Size = MainSize -- Asignación directa, cero animaciones de expansión
+	Window.Size = MainSize 
 	Window.Elements.Visible = true
 	Window.Navigation.Visible = true
 end
@@ -2163,7 +2197,7 @@ local function Minimize(Window)
 	Window.Controls.ToggleSize.ImageLabel.Image = "rbxassetid://11036884234"
 	Window.Elements.Visible = false
 	Window.Navigation.Visible = false
-	Window.Size = MinSize -- Asignación directa, se encoge al instante
+	Window.Size = MinSize 
 end
 
 
