@@ -1841,14 +1841,6 @@ local LunaUI = isStudio and script.Parent:WaitForChild("Luna UI") or game:GetObj
 
 local SizeBleh = nil
 
-local function Hide(Window, bind, notif)
-	SizeBleh = Window.Size
-	Window.Visible = false -- Puf, desaparece al instante
-	if Window.Parent:FindFirstChild("ShadowHolder") then
-		Window.Parent.ShadowHolder.Visible = false
-	end
-end
-
 
 if gethui then
 	LunaUI.Parent = gethui()
@@ -2038,13 +2030,11 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 				local newX = FramePos.X.Offset + Delta.X
 				local newY = FramePos.Y.Offset + Delta.Y
 				
-				-- Limitar para que no se salga de la pantalla nunca más
 				local maxX = Camera.ViewportSize.X - Window.AbsoluteSize.X
 				local maxY = Camera.ViewportSize.Y - Window.AbsoluteSize.Y
 				newX = math.clamp(newX, 0, maxX)
 				newY = math.clamp(newY, 0, maxY)
 
-				-- Movimiento instantáneo sin lag de Tween
 				Window.Position = UDim2.new(0, newX, 0, newY)
 
 				if dragBar then
@@ -2052,14 +2042,6 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 				end
 			end
 		end)
-
-				if dragBar then
-					local newDragBarPosition = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y + 240)
-					dragBar.Position = newDragBarPosition
-				end
-			end
-		end)
-
 	end)
 end
 
@@ -2144,6 +2126,17 @@ function Luna:Notification(data) -- action e.g open messages
 	end)
 end
 
+
+
+
+local function Hide(Window, bind, notif)
+	SizeBleh = Window.Size
+	Window.Visible = false -- Puf, desaparece al instante
+	if Window.Parent:FindFirstChild("ShadowHolder") then
+		Window.Parent.ShadowHolder.Visible = false
+	end
+end
+
 local function Unhide(Window, currentTab)
 	Window.Size = SizeBleh
 	Window.Elements.Visible = true
@@ -2152,6 +2145,9 @@ local function Unhide(Window, currentTab)
 		Window.Parent.ShadowHolder.Visible = false -- Mantener sombra muerta
 	end
 end
+
+local MainSize = UDim2.fromOffset(400, 400) -- Tu HUB cuadrado y más chico (perfecto para celular)
+local MinSize = UDim2.fromOffset(310, 42) -- La pastilla que ya habíamos hecho
 
 local MainSize = UDim2.fromOffset(400, 400) -- Tu HUB cuadrado y más chico (perfecto para celular)
 local MinSize = UDim2.fromOffset(310, 42) -- La pastilla que ya habíamos hecho
